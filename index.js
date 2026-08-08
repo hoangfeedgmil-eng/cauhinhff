@@ -55,4 +55,8 @@ app.post('/verify-key', (req, res) => {
   res.json({ valid: true, expiry: new Date(data.expiry).toISOString() });
 });
 
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.listen(PORT, () => console.log(`🔥 DEVILS RISE on port ${PORT}`));
