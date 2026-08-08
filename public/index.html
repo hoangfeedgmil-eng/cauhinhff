@@ -27,21 +27,32 @@
   </div>
 
   <div style="margin-top:30px; text-align:center; color:#aaa; font-size:14px;">
-    <p>🔑 <strong>Admin gen key:</strong> POST /generate-key (body: {"duration":"1d"})</p>
-    <hr>
-    <h3>🔧 GEN KEY NHANH</h3>
-    <!-- Ô nhập mật khẩu admin -->
-    <div style="margin-top:10px;">
-      <input type="password" id="adminPass" placeholder="Nhập mật khẩu admin..." style="padding:8px; width:70%; border-radius:6px; border:1px solid #0ff; background:#222; color:#0ff;">
+
+    <!-- ===== PHẦN GET KEY (LUÔN HIỆN) ===== -->
+    <div style="margin-top:20px; border-top:1px solid #0ff; padding-top:15px;">
+      <h3>🔑 GET KEY</h3>
+      <div>
+        <input type="password" id="passInput" placeholder="Nhập mật khẩu..." style="padding:8px; width:60%; border-radius:6px; border:1px solid #0ff; background:#222; color:#0ff;">
+        <button id="checkPassBtn">🔓 Xác nhận</button>
+      </div>
+      <p id="passResult" style="margin-top:10px;"></p>
     </div>
-    <select id="durationSelect" style="margin-top:10px; padding:8px; background:#222; color:#0ff; border:1px solid #0ff; border-radius:6px;">
-      <option value="1d">1 ngày</option>
-      <option value="7d" selected>7 ngày</option>
-      <option value="30d">30 ngày</option>
-      <option value="1y">1 năm</option>
-    </select>
-    <button id="genKeyBtn" style="margin-top:10px;">Tạo key</button>
-    <p id="newKeyDisplay" style="color:#0f0;"></p>
+
+    <!-- ===== PHẦN GEN KEY (ẨN MẶC ĐỊNH) ===== -->
+    <div id="genKeySection" style="display:none; margin-top:20px; border-top:1px solid #0ff; padding-top:15px;">
+      <h3>🔧 TẠO KEY</h3>
+      <div>
+        <select id="durationSelect" style="padding:8px; background:#222; color:#0ff; border:1px solid #0ff; border-radius:6px;">
+          <option value="1d">1 ngày</option>
+          <option value="7d" selected>7 ngày</option>
+          <option value="30d">30 ngày</option>
+          <option value="1y">1 năm</option>
+        </select>
+        <button id="genKeyBtn">⚡ Tạo key</button>
+      </div>
+      <p id="newKeyDisplay" style="color:#0f0; margin-top:10px;"></p>
+    </div>
+
   </div>
   <script src="script.js"></script>
 </body>
