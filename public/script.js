@@ -1,5 +1,6 @@
 let activeKey = null;
 
+// ===== XÁC THỰC KEY =====
 document.getElementById('verifyBtn').addEventListener('click', async () => {
   const key = document.getElementById('keyInput').value.trim();
   if (!key) {
@@ -30,10 +31,12 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
   }
 });
 
+// ===== CHỌN TẤT CẢ =====
 document.getElementById('selectAllBtn').addEventListener('click', () => {
   document.querySelectorAll('.feature').forEach(cb => cb.checked = true);
 });
 
+// ===== ÁP DỤNG =====
 document.getElementById('applyBtn').addEventListener('click', () => {
   if (!activeKey) {
     document.getElementById('result').innerHTML = '<p style="color:#f00;">❌ Mày chưa kích hoạt key!</p>';
@@ -52,33 +55,42 @@ document.getElementById('applyBtn').addEventListener('click', () => {
   `;
 });
 
-// ---------- GEN KEY (CÓ NHẬP MẬT KHẨU ADMIN) ----------
-document.getElementById('genKeyBtn').addEventListener('click', async () => {
-  const adminPass = document.getElementById('adminPass').value.trim();
-  if (!adminPass) {
-    document.getElementById('newKeyDisplay').innerHTML = '⚠️ Vui lòng nhập mật khẩu admin!';
-    document.getElementById('newKeyDisplay').style.color = '#ff0';
-    return;
-  }
+// ===== KIỂM TRA MẬT KHẨU (GET KEY) =====
+document.getElementById('checkPassBtn').addEventListener('click', () => {
+  const pass = document.getElementById('passInput').value.trim();
+  const resultEl = document.getElementById('passResult');
+  const genSection = document.getElementById('genKeySection');
 
+  if (pass === 'cauhinhbyhoangba') {
+    genSection.style.display = 'block';
+    resultEl.innerHTML = '✅ Mật khẩu đúng! Bạn có thể tạo key bên dưới.';
+    resultEl.style.color = '#0f0';
+    document.getElementById('passInput').value = '';
+  } else {
+    genSection.style.display = 'none';
+    resultEl.innerHTML = '❌ sai r cu , mua key ib hoang';
+    resultEl.style.color = '#f00';
+  }
+});
+
+// ===== TẠO KEY (CHỈ HOẠT ĐỘNG KHI ĐÃ NHẬP ĐÚNG PASS) =====
+document.getElementById('genKeyBtn').addEventListener('click', async () => {
   const duration = document.getElementById('durationSelect').value;
+  const resultEl = document.getElementById('newKeyDisplay');
+
   try {
     const res = await fetch('/generate-key', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'admin-token': adminPass
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ duration })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Lỗi tạo key');
-    document.getElementById('newKeyDisplay').innerHTML = `
-      ✅ Key mới: <strong style="color:#0ff;">${data.key}</strong> (hết hạn: ${new Date(data.expiry).toLocaleString()})
-    `;
+    resultEl.innerHTML = `✅ Key mới: <strong style="color:#0ff;">${data.key}</strong> (hết hạn: ${new Date(data.expiry).toLocaleString()})`;
+    resultEl.style.color = '#0f0';
     document.getElementById('keyInput').value = data.key;
   } catch (err) {
-    document.getElementById('newKeyDisplay').innerHTML = `❌ Lỗi: ${err.message}`;
-    document.getElementById('newKeyDisplay').style.color = '#f00';
+    resultEl.innerHTML = `❌ Lỗi: ${err.message}`;
+    resultEl.style.color = '#f00';
   }
 });
