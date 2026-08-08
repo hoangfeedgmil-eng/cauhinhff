@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEVILS CHEAT PANEL</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>💀 DEVILS WILL RISE</h1>
+    <div class="key-section">
+      <input type="text" id="keyInput" placeholder="Nhập key...">
+      <button id="verifyBtn">Kích hoạt</button>
+      <span id="status"></span>
+    </div>
+    <div class="features" id="featureList">
+      <label><input type="checkbox" class="feature" value="aimlock"> Aim Lock</label>
+      <label><input type="checkbox" class="feature" value="nhetam"> Nhẹ Tâm</label>
+      <label><input type="checkbox" class="feature" value="bamdau"> Bám Đầu</label>
+      <label><input type="checkbox" class="feature" value="fixlo"> Fix Lố</label>
+      <label><input type="checkbox" class="feature" value="fixrung"> Fix Rung</label>
+    </div>
+    <button id="selectAllBtn">✅ Chọn tất cả</button>
+    <button id="applyBtn">🔥 Áp dụng</button>
+    <div id="result"></div>
+  </div>
+  <div style="margin-top:30px; text-align:center; color:#aaa; font-size:14px;">
+    <p>🔑 <strong>Admin gen key:</strong> POST /generate-key (body: {"duration":"1d"})</p>
+    <p>📋 <strong>Xem danh sách key:</strong> GET /admin/keys</p>
+    <hr>
+    <h3>🔧 GEN KEY NHANH</h3>
+    <select id="durationSelect">
+      <option value="1d">1 ngày</option>
+      <option value="7d" selected>7 ngày</option>
+      <option value="30d">30 ngày</option>
+      <option value="1y">1 năm</option>
+    </select>
+    <button id="genKeyBtn">Tạo key</button>
+    <p id="newKeyDisplay" style="color:#0f0;"></p>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
