@@ -52,12 +52,23 @@ document.getElementById('applyBtn').addEventListener('click', () => {
   `;
 });
 
+// ---------- GEN KEY (CÓ NHẬP MẬT KHẨU ADMIN) ----------
 document.getElementById('genKeyBtn').addEventListener('click', async () => {
+  const adminPass = document.getElementById('adminPass').value.trim();
+  if (!adminPass) {
+    document.getElementById('newKeyDisplay').innerHTML = '⚠️ Vui lòng nhập mật khẩu admin!';
+    document.getElementById('newKeyDisplay').style.color = '#ff0';
+    return;
+  }
+
   const duration = document.getElementById('durationSelect').value;
   try {
     const res = await fetch('/generate-key', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'admin-token': adminPass
+      },
       body: JSON.stringify({ duration })
     });
     const data = await res.json();
