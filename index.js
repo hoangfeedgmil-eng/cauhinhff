@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 const ADMIN_TOKEN = 'hoangdzvcl'; // 👈 Token của mày
-const usedKeys = {};
+const usedKeys = {}; // Lưu IP đã kích hoạt key
 
 function readKeys() {
   if (!fs.existsSync(KEYS_FILE)) return {};
@@ -76,6 +76,23 @@ app.post('/verify-key', (req, res) => {
   res.json({ valid: true, expiry: new Date(data.expiry).toISOString() });
 });
 
+// ---------- XEM DANH SÁCH KEY (CHỈ ADMIN) ----------
+app.get('/admin/keys', (req, res) => {
+  const token = req.headers['admin-token'];
+  if (token !== ADMIN_TOKEN) {
+    return res.status(403).json({ error: '❌ Chỉ admin mới được xem danh sách key' });
+  }
+  const keys = readKeys();
+  const now = Date.now();
+  const list = Object.entries(keys).map(([k, v]) => ({
+    key: k,
+    expiry: new Date(v.expiry).toISOString(),
+    expired: now > v.expiry
+  }));
+  res.json(list);
+});
+
+// ---------- SERVE WEB ----------
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
