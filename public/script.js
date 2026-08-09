@@ -29,7 +29,7 @@ function updateCountdown() {
   statusEl.style.color = '#0f0';
 }
 
-// ===== LƯU KEY VÀO LOCALSTORAGE (LƯU VĨNH VIỄN) =====
+// ===== LƯU KEY VÀO LOCALSTORAGE =====
 function saveKey(key, expiry) {
   if (key) {
     localStorage.setItem('ff_key', key);
@@ -70,7 +70,6 @@ async function checkSavedKey() {
       if (countdownInterval) clearInterval(countdownInterval);
       countdownInterval = setInterval(updateCountdown, 1000);
     } else {
-      // Nếu key không hợp lệ (hết hạn hoặc bị khóa IP), xóa khỏi localStorage
       saveKey(null, null);
       document.getElementById('status').innerHTML = `❌ ${data.error || 'Key không hợp lệ'}`;
       document.getElementById('status').style.color = '#f00';
@@ -80,7 +79,7 @@ async function checkSavedKey() {
   }
 }
 
-// ===== XÁC THỰC KEY (KHI BẤM NÚT KÍCH HOẠT) =====
+// ===== XÁC THỰC KEY =====
 document.getElementById('verifyBtn').addEventListener('click', async () => {
   const key = document.getElementById('keyInput').value.trim();
   if (!key) {
@@ -101,7 +100,7 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
     if (data.valid) {
       activeKey = key;
       expiryTime = new Date(data.expiry).getTime();
-      saveKey(key, expiryTime); // 👈 LƯU VÀO LOCALSTORAGE
+      saveKey(key, expiryTime);
       status.innerHTML = `✅ Key hợp lệ - hết hạn: ${new Date(data.expiry).toLocaleString()}`;
       status.style.color = '#0f0';
       if (countdownInterval) clearInterval(countdownInterval);
@@ -174,12 +173,11 @@ document.getElementById('genKeyBtn').addEventListener('click', async () => {
     resultEl.innerHTML = `✅ Key mới: <strong style="color:#0ff;">${data.key}</strong> (hết hạn: ${new Date(data.expiry).toLocaleString()})`;
     resultEl.style.color = '#0f0';
     document.getElementById('keyInput').value = data.key;
-    document.getElementById('verifyBtn').click(); // Tự động kích hoạt luôn
+    document.getElementById('verifyBtn').click();
   } catch (err) {
     resultEl.innerHTML = `❌ Lỗi: ${err.message}`;
     resultEl.style.color = '#f00';
   }
 });
 
-// ===== KHI TRANG LOAD, KIỂM TRA KEY ĐÃ LƯU =====
 window.addEventListener('DOMContentLoaded', checkSavedKey);
