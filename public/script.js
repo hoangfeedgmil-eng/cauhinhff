@@ -1,6 +1,45 @@
 let activeKey = null;
 
-// ===== XÁC THỰC KEY =====
+// ===== HÀM LƯU KEY VÀO LOCALSTORAGE =====
+function saveKey(key) {
+  if (key) {
+    localStorage.setItem('ff_key', key);
+  } else {
+    localStorage.removeItem('ff_key');
+  }
+}
+
+// ===== HÀM KIỂM TRA KEY TỪ LOCALSTORAGE KHI LOAD TRANG =====
+async function checkSavedKey() {
+  const savedKey = localStorage.getItem('ff_key');
+  if (!savedKey) return;
+
+  try {
+    const res = await fetch('/verify-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: savedKey })
+    });
+    const data = await res.json();
+
+    if (data.valid) {
+      activeKey = savedKey;
+      document.getElementById('keyInput').value = savedKey;
+      document.getElementById('status').innerHTML = `✅ Key hợp lệ - hết hạn: ${new Date(data.expiry).toLocaleString()}`;
+      document.getElementById('status').style.color = '#0f0';
+      // Nếu key còn hạn, tự động kích hoạt các chức năng đã chọn? Có thể để người dùng tự bấm "Áp dụng"
+    } else {
+      // Key không hợp lệ hoặc hết hạn => xóa khỏi localStorage
+      saveKey(null);
+      document.getElementById('status').innerHTML = `❌ ${data.error || 'Key đã hết hạn, vui lòng nhập key mới'}`;
+      document.getElementById('status').style.color = '#f00';
+    }
+  } catch (err) {
+    console.error('Lỗi kiểm tra key:', err);
+  }
+}
+
+// ===== XÁC THỰC KEY (KHI BẤM NÚT KÍCH HOẠT) =====
 document.getElementById('verifyBtn').addEventListener('click', async () => {
   const key = document.getElementById('keyInput').value.trim();
   if (!key) {
@@ -8,6 +47,7 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
     document.getElementById('status').style.color = '#ff0';
     return;
   }
+
   try {
     const res = await fetch('/verify-key', {
       method: 'POST',
@@ -16,12 +56,15 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
     });
     const data = await res.json();
     const status = document.getElementById('status');
+
     if (data.valid) {
       activeKey = key;
+      saveKey(key); // 👈 LƯU KEY VÀO LOCALSTORAGE
       status.innerHTML = `✅ Key hợp lệ - hết hạn: ${new Date(data.expiry).toLocaleString()}`;
       status.style.color = '#0f0';
     } else {
       activeKey = null;
+      saveKey(null);
       status.innerHTML = `❌ ${data.error}`;
       status.style.color = '#f00';
     }
@@ -73,7 +116,7 @@ document.getElementById('checkPassBtn').addEventListener('click', () => {
   }
 });
 
-// ===== TẠO KEY (CHỈ HOẠT ĐỘNG KHI ĐÃ NHẬP ĐÚNG PASS) =====
+// ===== TẠO KEY =====
 document.getElementById('genKeyBtn').addEventListener('click', async () => {
   const duration = document.getElementById('durationSelect').value;
   const resultEl = document.getElementById('newKeyDisplay');
@@ -88,9 +131,15 @@ document.getElementById('genKeyBtn').addEventListener('click', async () => {
     if (!res.ok) throw new Error(data.error || 'Lỗi tạo key');
     resultEl.innerHTML = `✅ Key mới: <strong style="color:#0ff;">${data.key}</strong> (hết hạn: ${new Date(data.expiry).toLocaleString()})`;
     resultEl.style.color = '#0f0';
+    // Tự động điền key vào ô nhập và lưu
     document.getElementById('keyInput').value = data.key;
+    // Gọi luôn verify để kích hoạt key vừa tạo
+    document.getElementById('verifyBtn').click();
   } catch (err) {
     resultEl.innerHTML = `❌ Lỗi: ${err.message}`;
     resultEl.style.color = '#f00';
   }
 });
+
+// ===== KHI TRANG LOAD, KIỂM TRA KEY ĐÃ LƯU =====
+window.addEventListener('DOMContentLoaded', checkSavedKey);
