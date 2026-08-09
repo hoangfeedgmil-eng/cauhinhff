@@ -119,7 +119,7 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
   }
 });
 
-// ===== CÁC HÀM KHÁC GIỮ NGUYÊN (CHỌN TẤT CẢ, ÁP DỤNG, GET KEY, TẠO KEY) =====
+// ===== CÁC HÀM KHÁC GIỮ NGUYÊN =====
 document.getElementById('selectAllBtn').addEventListener('click', () => {
   document.querySelectorAll('.feature').forEach(cb => cb.checked = true);
 });
