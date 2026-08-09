@@ -11,9 +11,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Lưu IP đã kích hoạt key (dùng Map để tránh lỗi)
-const usedKeys = new Map();
-
 function readKeys() {
   try {
     if (!fs.existsSync(KEYS_FILE)) return {};
@@ -50,7 +47,11 @@ app.post('/generate-key', (req, res) => {
 
     const key = 'KEY-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
     const keys = readKeys();
-    keys[key] = { expiry };
+    keys[key] = { 
+      expiry: expiry,
+      used: false,      // 👈 Đánh dấu key chưa được sử dụng
+      usedBy: null      // 👈 Lưu IP người dùng (nếu cần)
+    };
     if (!writeKeys(keys)) {
       return res.status(500).json({ error: 'Không thể lưu key' });
     }
@@ -62,7 +63,7 @@ app.post('/generate-key', (req, res) => {
   }
 });
 
-// ---------- VERIFY KEY (CÓ IP LOCK) ----------
+// ---------- VERIFY KEY (CHỈ DÙNG 1 LẦN) ----------
 app.post('/verify-key', (req, res) => {
   try {
     const { key } = req.body;
@@ -73,20 +74,23 @@ app.post('/verify-key', (req, res) => {
     const keys = readKeys();
     const data = keys[key];
     if (!data) return res.json({ valid: false, error: 'Key không tồn tại' });
+
+    // Kiểm tra key đã được sử dụng chưa
+    if (data.used) {
+      return res.json({ valid: false, error: '❌ Key đã được sử dụng bởi thiết bị khác' });
+    }
+
+    // Kiểm tra hết hạn
     if (Date.now() > data.expiry) {
       delete keys[key];
       writeKeys(keys);
-      return res.json({ valid: false, error: 'Key hết hạn' });
+      return res.json({ valid: false, error: 'Key đã hết hạn' });
     }
 
-    // IP Lock
-    if (usedKeys.has(key) && usedKeys.get(key) !== clientIP) {
-      return res.json({ valid: false, error: '⚠️ Key đang được dùng bởi thiết bị khác' });
-    }
-
-    if (!usedKeys.has(key)) {
-      usedKeys.set(key, clientIP);
-    }
+    // Đánh dấu key đã được sử dụng
+    data.used = true;
+    data.usedBy = clientIP;
+    writeKeys(keys);
 
     res.json({ valid: true, expiry: new Date(data.expiry).toISOString() });
   } catch (e) {
