@@ -1,18 +1,58 @@
 let activeKey = null;
+let expiryTime = null;
+let countdownInterval = null;
 
-// ===== HÀM LƯU KEY VÀO LOCALSTORAGE =====
-function saveKey(key) {
+// ===== HIỂN THỊ THỜI GIAN CÒN LẠI =====
+function updateCountdown() {
+  const statusEl = document.getElementById('status');
+  if (!expiryTime) {
+    if (statusEl.innerHTML.includes('✅')) {
+      statusEl.innerHTML = '✅ Key đã kích hoạt (không rõ thời gian còn lại)';
+    }
+    return;
+  }
+  const now = Date.now();
+  const diff = expiryTime - now;
+  if (diff <= 0) {
+    clearInterval(countdownInterval);
+    statusEl.innerHTML = '⏰ Key đã hết hạn, vui lòng nhập key mới';
+    statusEl.style.color = '#ff0';
+    activeKey = null;
+    localStorage.removeItem('ff_key');
+    localStorage.removeItem('ff_expiry');
+    return;
+  }
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+  statusEl.innerHTML = `✅ Key hợp lệ - còn ${hours}h ${minutes}m ${seconds}s`;
+  statusEl.style.color = '#0f0';
+}
+
+// ===== LƯU KEY VÀO LOCALSTORAGE (LƯU VĨNH VIỄN) =====
+function saveKey(key, expiry) {
   if (key) {
     localStorage.setItem('ff_key', key);
+    localStorage.setItem('ff_expiry', expiry);
   } else {
     localStorage.removeItem('ff_key');
+    localStorage.removeItem('ff_expiry');
   }
 }
 
-// ===== HÀM KIỂM TRA KEY TỪ LOCALSTORAGE KHI LOAD TRANG =====
+// ===== KIỂM TRA KEY TỪ LOCALSTORAGE KHI LOAD TRANG =====
 async function checkSavedKey() {
   const savedKey = localStorage.getItem('ff_key');
+  const savedExpiry = localStorage.getItem('ff_expiry');
   if (!savedKey) return;
+
+  expiryTime = parseInt(savedExpiry);
+  if (Date.now() > expiryTime) {
+    saveKey(null, null);
+    document.getElementById('status').innerHTML = '⏰ Key đã hết hạn, vui lòng nhập key mới';
+    document.getElementById('status').style.color = '#ff0';
+    return;
+  }
 
   try {
     const res = await fetch('/verify-key', {
@@ -24,14 +64,15 @@ async function checkSavedKey() {
 
     if (data.valid) {
       activeKey = savedKey;
+      expiryTime = new Date(data.expiry).getTime();
       document.getElementById('keyInput').value = savedKey;
-      document.getElementById('status').innerHTML = `✅ Key hợp lệ - hết hạn: ${new Date(data.expiry).toLocaleString()}`;
-      document.getElementById('status').style.color = '#0f0';
-      // Nếu key còn hạn, tự động kích hoạt các chức năng đã chọn? Có thể để người dùng tự bấm "Áp dụng"
+      updateCountdown();
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(updateCountdown, 1000);
     } else {
-      // Key không hợp lệ hoặc hết hạn => xóa khỏi localStorage
-      saveKey(null);
-      document.getElementById('status').innerHTML = `❌ ${data.error || 'Key đã hết hạn, vui lòng nhập key mới'}`;
+      // Nếu key không hợp lệ (hết hạn hoặc bị khóa IP), xóa khỏi localStorage
+      saveKey(null, null);
+      document.getElementById('status').innerHTML = `❌ ${data.error || 'Key không hợp lệ'}`;
       document.getElementById('status').style.color = '#f00';
     }
   } catch (err) {
@@ -59,12 +100,16 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
 
     if (data.valid) {
       activeKey = key;
-      saveKey(key); // 👈 LƯU KEY VÀO LOCALSTORAGE
+      expiryTime = new Date(data.expiry).getTime();
+      saveKey(key, expiryTime); // 👈 LƯU VÀO LOCALSTORAGE
       status.innerHTML = `✅ Key hợp lệ - hết hạn: ${new Date(data.expiry).toLocaleString()}`;
       status.style.color = '#0f0';
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(updateCountdown, 1000);
+      updateCountdown();
     } else {
       activeKey = null;
-      saveKey(null);
+      saveKey(null, null);
       status.innerHTML = `❌ ${data.error}`;
       status.style.color = '#f00';
     }
@@ -74,12 +119,11 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
   }
 });
 
-// ===== CHỌN TẤT CẢ =====
+// ===== CÁC HÀM KHÁC GIỮ NGUYÊN (CHỌN TẤT CẢ, ÁP DỤNG, GET KEY, TẠO KEY) =====
 document.getElementById('selectAllBtn').addEventListener('click', () => {
   document.querySelectorAll('.feature').forEach(cb => cb.checked = true);
 });
 
-// ===== ÁP DỤNG =====
 document.getElementById('applyBtn').addEventListener('click', () => {
   if (!activeKey) {
     document.getElementById('result').innerHTML = '<p style="color:#f00;">❌ Mày chưa kích hoạt key!</p>';
@@ -98,7 +142,6 @@ document.getElementById('applyBtn').addEventListener('click', () => {
   `;
 });
 
-// ===== KIỂM TRA MẬT KHẨU (GET KEY) =====
 document.getElementById('checkPassBtn').addEventListener('click', () => {
   const pass = document.getElementById('passInput').value.trim();
   const resultEl = document.getElementById('passResult');
@@ -116,7 +159,6 @@ document.getElementById('checkPassBtn').addEventListener('click', () => {
   }
 });
 
-// ===== TẠO KEY =====
 document.getElementById('genKeyBtn').addEventListener('click', async () => {
   const duration = document.getElementById('durationSelect').value;
   const resultEl = document.getElementById('newKeyDisplay');
@@ -131,10 +173,8 @@ document.getElementById('genKeyBtn').addEventListener('click', async () => {
     if (!res.ok) throw new Error(data.error || 'Lỗi tạo key');
     resultEl.innerHTML = `✅ Key mới: <strong style="color:#0ff;">${data.key}</strong> (hết hạn: ${new Date(data.expiry).toLocaleString()})`;
     resultEl.style.color = '#0f0';
-    // Tự động điền key vào ô nhập và lưu
     document.getElementById('keyInput').value = data.key;
-    // Gọi luôn verify để kích hoạt key vừa tạo
-    document.getElementById('verifyBtn').click();
+    document.getElementById('verifyBtn').click(); // Tự động kích hoạt luôn
   } catch (err) {
     resultEl.innerHTML = `❌ Lỗi: ${err.message}`;
     resultEl.style.color = '#f00';
